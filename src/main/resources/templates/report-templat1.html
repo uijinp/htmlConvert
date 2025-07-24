@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>진료비 계산서</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #333; padding: 5px; text-align: center; font-size: 14px; }
+        .section-title { background-color: #eee; font-weight: bold; }
+        .right-align { text-align: right; }
+    </style>
+</head>
+<body>
+
+<h2>진료비 계산서 · 영수증</h2>
+
+<table>
+    <tr>
+        <th>환자번호</th><td id="patientNo"></td>
+        <th>진료과</th><td id="department"></td>
+        <th>진료기간</th><td id="treatmentPeriod"></td>
+    </tr>
+    <tr>
+        <th>병실</th><td id="roomNo"></td>
+        <th>환자구분</th><td colspan="3" id="insuranceType"></td>
+    </tr>
+</table>
+
+<h3>기본항목</h3>
+<table>
+    <tr class="section-title">
+        <th>항목</th><th>본인부담금</th><th>공단부담금</th><th>비고</th>
+    </tr>
+    <tr><td>진찰료</td><td id="fee_진찰료"></td><td id="public_진찰료"></td><td id="note_진찰료"></td></tr>
+    <tr><td>입원료</td><td id="fee_입원료"></td><td id="public_입원료"></td><td id="note_입원료"></td></tr>
+    <tr><td>투약 및 약품비</td><td id="fee_투약"></td><td id="public_투약"></td><td id="note_투약"></td></tr>
+    <tr><td>처치 및 수술료</td><td id="fee_처치"></td><td id="public_처치"></td><td id="note_처치"></td></tr>
+    <tr><td>검사료</td><td id="fee_검사"></td><td id="public_검사"></td><td id="note_검사"></td></tr>
+    <tr><td>재활 및 물리치료</td><td id="fee_재활"></td><td id="public_재활"></td><td id="note_재활"></td></tr>
+</table>
+
+<h3>선택항목</h3>
+<table>
+    <tr class="section-title">
+        <th>항목</th><th>본인부담금</th>
+    </tr>
+    <tr><td>상급병실료</td><td id="fee_상급병실료"></td></tr>
+    <tr><td>제증명료</td><td id="fee_제증명료"></td></tr>
+</table>
+
+<h3>총 금액</h3>
+<table>
+    <tr><th>총 진료비</th><td class="right-align" id="totalCost"></td></tr>
+    <tr><th>공단부담금</th><td class="right-align" id="totalPublic"></td></tr>
+    <tr><th>본인부담금</th><td class="right-align" id="totalPersonal"></td></tr>
+    <tr><th>납부금액</th><td class="right-align" id="paidAmount"></td></tr>
+    <tr><th>수납방법</th><td id="paymentMethod"></td></tr>
+</table>
+
+<p><strong>발급일자:</strong> <span id="issueDate"></span></p>
+<p><strong>의료기관:</strong> <span id="hospitalName"></span></p>
+
+<script>
+    const data = {}; // 여기에 JSON 데이터 주입
+    Object.entries(data).forEach(([key, value]) => {
+      const element = document.getElementById(key);
+      if (element) element.innerText = value;
+    });
+</script>
+
+</body>
+</html>

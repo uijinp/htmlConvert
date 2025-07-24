@@ -1,0 +1,40 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.3'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.htmlConvert'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// 기본 Spring Boot Starter
+	implementation 'org.springframework.boot:spring-boot-starter'
+
+	// 웹 API 개발 및 JSON(ObjectMapper) 처리를 위한 starter
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// Mustache 템플릿 엔진
+	implementation 'com.github.spullara.mustache.java:compiler:0.9.10'
+
+	// Headless Browser 제어를 위한 Playwright
+	implementation 'com.microsoft.playwright:playwright:1.44.0'
+
+	// 테스트 의존성
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

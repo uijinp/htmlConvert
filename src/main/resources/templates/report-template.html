@@ -1,0 +1,24 @@
+<!-- src/main/resources/templates/report-template.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        body { font-family: sans-serif; width: 500px; border: 1px solid #ccc; padding: 20px; }
+        h1 { color: #333; }
+        .user-info { margin-top: 20px; }
+        .user-info p { margin: 5px 0; }
+        .user-info span { font-weight: bold; }
+    </style>
+</head>
+<body>
+<h1>월간 리포트</h1>
+<div class="user-info">
+    <!-- Thymeleaf 문법에서 Mustache 문법으로 변경 -->
+    <p>사용자: <span>{{data.name}}</span></p>
+    <p>이메일: <span>{{data.email}}</span></p>
+    <p>방문 횟수: <span>{{data.visitCount}}</span>회</p>
+</div>
+</body>
+</html>
