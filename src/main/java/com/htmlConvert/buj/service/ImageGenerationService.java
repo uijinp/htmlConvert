@@ -1,11 +1,15 @@
 package com.htmlConvert.buj.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper; // JSON 처리를 위해 추가
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.microsoft.playwright.*;
-import org.springframework.core.io.ClassPathResource; // 클래스패스 리소스 로딩을 위해 추가
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value; // @Value 어노테이션 추가
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -20,12 +24,14 @@ import java.util.UUID;
 
 @Service
 public class ImageGenerationService {
+    private static final Logger logger = LoggerFactory.getLogger(ImageGenerationService.class);
 
     private final MustacheFactory mustacheFactory;
-    private final ObjectMapper objectMapper; // JSON 문자열 변환을 위한 ObjectMapper 주입
+    private final ObjectMapper objectMapper;
     private final Playwright playwright;
+    @Value("${app.template.external-path:}") // 값이 없을 경우 빈 문자열이 되도록 기본값 설정
+    private String externalTemplatePath;
 
-    // 생성자에서 Playwright와 ObjectMapper를 주입받도록 수정
     public ImageGenerationService(Playwright playwright, ObjectMapper objectMapper) {
         this.mustacheFactory = new DefaultMustacheFactory("templates");
         this.playwright = playwright;
@@ -33,41 +39,50 @@ public class ImageGenerationService {
     }
 
     public byte[] generateImageFromTemplate(String templateName, Map<String, Object> data) {
-        // 1. 템플릿 이름에 따라 다른 방식으로 HTML 컨텐츠 생성
         String htmlContent;
         try {
-            // 템플릿 파일을 읽어옴
-            String templateString = new String(new ClassPathResource("templates/" + templateName + ".html").getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            // 템플릿 내용을 가져오는 로직을 별도 메소드로 분리
+            String templateString = getTemplateContent(templateName);
+            htmlContent = injectDataIntoJavaScript(templateString, data);
 
-            // 템플릿 이름에 따라 분기 처리
-            if ("report-templat1".equals(templateName)) { // 오타가 있는 파일 이름 그대로 사용
-                htmlContent = injectDataIntoJavaScript(templateString, data);
-            } else {
-                // 기존 Mustache 방식
-                htmlContent = compileWithMustache(templateString, data);
-            }
         } catch (IOException e) {
             throw new RuntimeException("템플릿 파일을 읽거나 처리하는 중 오류 발생: " + templateName, e);
         }
 
-
-        // 2. Playwright를 사용하여 HTML 렌더링 및 스크린샷 (성능 개선안 적용)
         try (Browser browser = this.playwright.chromium().launch()) {
             Page page = browser.newPage();
             page.setContent(htmlContent);
-            byte[] imageBytes = page.screenshot(new Page.ScreenshotOptions().setFullPage(true));
-            return imageBytes;
+            return page.screenshot(new Page.ScreenshotOptions().setFullPage(true));
         }
     }
 
     /**
+     * 외부 경로 또는 내부 클래스패스에서 템플릿 내용을 읽어옵니다.
+     * 외부 경로에 파일이 존재하면 그 파일을 우선적으로 사용합니다.
+     */
+    private String getTemplateContent(String templateName) throws IOException {
+        // 1. 외부 경로 확인
+        // externalTemplatePath가 비어있지 않은 경우에만 외부 경로를 탐색합니다.
+        if (externalTemplatePath != null && !externalTemplatePath.isBlank()) {
+            Path externalPath = Paths.get(externalTemplatePath, templateName + ".html");
+            if (Files.exists(externalPath)) {
+                logger.info("외부 템플릿 파일을 사용합니다: {}", externalPath);
+                return Files.readString(externalPath, StandardCharsets.UTF_8);
+            }
+        }
+
+        // 2. 외부 경로에 파일이 없으면 내부(classpath) 템플릿 사용 (기존 로직)
+        logger.info("내부 기본 템플릿 파일을 사용합니다: {}", templateName);
+        ClassPathResource resource = new ClassPathResource("templates/" + templateName + ".html");
+        return new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+    }
+    /**
      * 새로운 방식: HTML 내의 JavaScript 변수에 JSON 데이터를 직접 주입합니다.
      */
     private String injectDataIntoJavaScript(String template, Map<String, Object> data) throws IOException {
-        // Map 데이터를 JSON 문자열로 변환
         String jsonString = objectMapper.writeValueAsString(data);
-        // HTML의 'const data = {};' 부분을 'const data = {...};' 로 교체
-        return template.replace("const data = {};", "const data = " + jsonString + ";");
+        // 정규식을 사용하여 좀 더 안정적으로 교체
+        return template.replaceFirst("const\\s+data\\s*=\\s*\\{\\s*\\};", "const data = " + jsonString + ";");
     }
 
     /**
