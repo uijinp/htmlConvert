@@ -5,10 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-import com.microsoft.playwright.*;
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.Page;
+import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value; // @Value 어노테이션 추가
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
@@ -28,13 +30,13 @@ public class ImageGenerationService {
 
     private final MustacheFactory mustacheFactory;
     private final ObjectMapper objectMapper;
-    private final Playwright playwright;
+    private final GenericObjectPool<Browser> browserPool; // Playwright 대신 브라우저 풀 주입
     @Value("${app.template.external-path:}") // 값이 없을 경우 빈 문자열이 되도록 기본값 설정
     private String externalTemplatePath;
 
-    public ImageGenerationService(Playwright playwright, ObjectMapper objectMapper) {
+    public ImageGenerationService(GenericObjectPool<Browser> browserPool, ObjectMapper objectMapper) {
         this.mustacheFactory = new DefaultMustacheFactory("templates");
-        this.playwright = playwright;
+        this.browserPool = browserPool;
         this.objectMapper = objectMapper;
     }
 
@@ -49,10 +51,22 @@ public class ImageGenerationService {
             throw new RuntimeException("템플릿 파일을 읽거나 처리하는 중 오류 발생: " + templateName, e);
         }
 
-        try (Browser browser = this.playwright.chromium().launch()) {
+        Browser browser = null;
+        try {
+            browser = browserPool.borrowObject(); // 풀에서 브라우저 인스턴스 대여
             Page page = browser.newPage();
             page.setContent(htmlContent);
             return page.screenshot(new Page.ScreenshotOptions().setFullPage(true));
+        } catch (Exception e) {
+            throw new RuntimeException("Playwright 브라우저 사용 중 오류 발생", e);
+        } finally {
+            if (browser != null) {
+                try {
+                    browserPool.returnObject(browser); // 사용한 브라우저 인스턴스 반납
+                } catch (Exception e) {
+                    logger.error("브라우저 풀에 인스턴스를 반납하는 중 오류 발생", e);
+                }
+            }
         }
     }
 
