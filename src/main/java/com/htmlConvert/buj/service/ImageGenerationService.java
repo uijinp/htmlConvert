@@ -40,7 +40,7 @@ public class ImageGenerationService {
         this.objectMapper = objectMapper;
     }
 
-    public byte[] generateImageFromTemplate(String templateName, Map<String, Object> data) {
+    public synchronized byte[] generateImageFromTemplate(String templateName, Map<String, Object> data) {
         String htmlContent;
         try {
             // 템플릿 내용을 가져오는 로직을 별도 메소드로 분리
@@ -55,8 +55,12 @@ public class ImageGenerationService {
         try {
             browser = browserPool.borrowObject(); // 풀에서 브라우저 인스턴스 대여
             Page page = browser.newPage();
-            page.setContent(htmlContent);
-            return page.screenshot(new Page.ScreenshotOptions().setFullPage(true));
+            try {
+                page.setContent(htmlContent);
+                return page.screenshot(new Page.ScreenshotOptions().setFullPage(true).setTimeout(60000));
+            } finally {
+                page.close(); // Page 객체 닫기
+            }
         } catch (Exception e) {
             throw new RuntimeException("Playwright 브라우저 사용 중 오류 발생", e);
         } finally {
