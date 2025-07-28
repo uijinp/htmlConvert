@@ -40,7 +40,7 @@ public class ImageGenerationService {
         this.objectMapper = objectMapper;
     }
 
-    public byte[] generateImageFromTemplate(String templateName, Map<String, Object> data) {
+    public synchronized byte[] generateImageFromTemplate(String templateName, Map<String, Object> data) {
         String htmlContent;
         try {
             // 템플릿 내용을 가져오는 로직을 별도 메소드로 분리
