@@ -4,6 +4,8 @@ import { check, sleep } from 'k6';
 // 테스트 옵션 설정
 export const options = {
   stages: [
+    { duration: '1m', target: 10 },   // 1분 동안 가상 사용자를 50명까지 서서히 늘림
+    { duration: '3m', target: 10 },   // 50명 상태로 3분간 유지
     { duration: '1m', target: 0 },    // 1분 동안 0명으로 서서히 줄임
   ],
   thresholds: {
