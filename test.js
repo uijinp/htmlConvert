@@ -4,8 +4,8 @@ import { check, sleep } from 'k6';
 // 테스트 옵션 설정
 export const options = {
   stages: [
-    { duration: '1m', target: 10 },   // 1분 동안 가상 사용자를 50명까지 서서히 늘림
-    { duration: '3m', target: 10 },   // 50명 상태로 3분간 유지
+    { duration: '1m', target: 10 },   // 1분 동안 가상 사용자를 10명까지 서서히 늘림
+    { duration: '3m', target: 10 },   // 10명 상태로 3분간 유지
     { duration: '1m', target: 0 },    // 1분 동안 0명으로 서서히 줄임
   ],
   thresholds: {
@@ -60,7 +60,7 @@ const params = {
 
 // 가상 사용자가 실행할 기본 함수
 export default function () {
-  const res = http.post('http://localhost:8080/api/images/report-templat1/file', payload, params);
+  const res = http.post('http://localhost:8080/api/images/report-templat1/url', payload, params);
 
   // 응답 검증
   check(res, {
